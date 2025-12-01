@@ -9,17 +9,24 @@ impl Dial {
         }
     }
 
-    pub fn rotate(&mut self, instruction: i8) -> u8 {
+    pub fn rotate(&mut self, instruction: i8) -> (u8, bool) {
+        let new_state;
+        let over_hundred;
         if instruction >= 0 {
-            self.current_state = (self.current_state + instruction as u8) % 100;
+            new_state = self.current_state + instruction as u8;
+            over_hundred = new_state >= 100;
         } else {
-            self.current_state = (self.current_state + (100 + instruction) as u8) % 100;
+            new_state = self.current_state + ((100 + instruction) as u8);
+            over_hundred =
+                self.current_state > 0 && self.current_state <= (instruction.abs() as u8);
         }
 
-        self.current_state
+        self.current_state = new_state % 100;
+
+        (self.current_state, over_hundred)
     }
 
-    pub fn parse_line(line: &str) -> Option<i8> {
+    pub fn parse_line(line: &str) -> Option<(i8, u32)> {
         let mut instruction = line.trim();
         // return None if string too small
         if instruction.len() < 2 {
@@ -38,12 +45,17 @@ impl Dial {
         // parse rest of string as u32
         instruction = &instruction[1..];
         let rotation: i8;
+        let hundreds: u32;
         match instruction.parse::<u32>() {
-            Ok(value) => rotation = (value % 100) as i8,
+            Ok(value) => {
+                // hundreds == how many full rotations
+                hundreds = value / 100;
+                rotation = (value % 100) as i8;
+            }
             Err(_) => return None,
         }
 
         // return parsed number mod 100 as i8
-        return Some(rotation * direction);
+        return Some((rotation * direction, hundreds));
     }
 }

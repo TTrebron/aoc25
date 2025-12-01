@@ -35,7 +35,8 @@ fn main() -> ExitCode {
         }
     }
 
-    let mut solution = 0;
+    let mut solution_part_one = 0;
+    let mut solution_part_two = 0;
     let mut dial = Dial::new(50);
     for read_next_line in reader.lines() {
         match read_next_line {
@@ -44,11 +45,17 @@ fn main() -> ExitCode {
                 println!("{}", line);
                 // parse line: returns Some(-n) or Some(n) or None
                 match Dial::parse_line(&line) {
-                    Some(instruction) => {
+                    Some((instruction, hundreds)) => {
                         // rotate_dial(instruction) -> returns true if result is 0
-                        if dial.rotate(instruction) == 0 {
+                        let (current_state, hundred_overflow) = dial.rotate(instruction);
+                        if current_state == 0 {
                             // if return is 0: solution += 1;
-                            solution += 1;
+                            solution_part_one += 1;
+                        }
+                        // part two
+                        solution_part_two += hundreds;
+                        if hundred_overflow {
+                            solution_part_two += 1;
                         }
                     }
                     None => eprintln!("Error parsing line"),
@@ -60,7 +67,8 @@ fn main() -> ExitCode {
         }
     }
 
-    println!("Number of 0 states: {}", solution);
+    println!("Number of 0 states: {}", solution_part_one);
+    println!("Number of 0 states during rotations: {}", solution_part_two);
 
     ExitCode::SUCCESS
 }
