@@ -1,0 +1,43 @@
+use std::{env, fs, process::ExitCode};
+
+use iters::InvalidIdIterator;
+use iters::RangesParser;
+mod iters;
+
+fn main() -> ExitCode {
+    // get filename from first param
+    let filename;
+    match env::args().nth(1) {
+        Some(arg) => filename = arg,
+        None => {
+            eprintln!(
+                "Usage: {} <inputfile>",
+                env::args().nth(0).unwrap_or_default()
+            );
+            return ExitCode::FAILURE;
+        }
+    }
+
+    // read file contents into a string
+    let input;
+    match fs::read_to_string(&filename) {
+        Ok(contents) => input = contents,
+        Err(e) => {
+            eprintln!("Error reading {}: {}", filename, e);
+            return ExitCode::FAILURE;
+        }
+    }
+
+    // parse ranges and iterate through all invalid ids
+    let mut solution: u64 = 0;
+    for range in RangesParser::new(&input) {
+        println!("{}-{}", range.0, range.1);
+        for invalid_id in InvalidIdIterator::new(range.0, range.1) {
+            solution += invalid_id;
+        }
+    }
+
+    println!("The sum of invalid IDs is: {}", solution);
+
+    ExitCode::SUCCESS
+}
