@@ -120,7 +120,15 @@ impl Iterator for InvalidIdIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         let current_pattern = match self.last_pattern {
-            0 => self.upper_half_min,
+            0 => {
+                if self.digits_min.rem(2) == 1 {
+                    u64::pow(10, std::cmp::max(self.upper_half_digits_min - 1, 0))
+                } else if self.lower_half_min > self.upper_half_min {
+                    self.upper_half_min + 1
+                } else {
+                    self.upper_half_min
+                }
+            }
             val => val + 1,
         };
         self.digits_last_pattern = current_pattern.checked_ilog10().unwrap_or_default() + 1;
