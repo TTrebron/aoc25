@@ -41,7 +41,7 @@ impl Iterator for RangesParser {
     }
 }
 
-fn split_in_half(num: u64) -> (u32, u32, u32, u64, u64) {
+fn get_half_point(num: u64) -> u32 {
     // let digits_min = min == 0 ? 1 : floor(log10(min)) + 1
     // let upper_half_digits_min = ceil(digits_min/2);
     // let lower_half_digits_min = digits_min - upper_half_digits_min;
@@ -50,7 +50,14 @@ fn split_in_half(num: u64) -> (u32, u32, u32, u64, u64) {
 
     let digits = num.checked_ilog10().unwrap_or_default() + 1;
     let upper_half_digits = digits.div_ceil(2);
-    let lower_half_digits = digits - upper_half_digits;
+
+    upper_half_digits
+}
+
+fn split_at(num: u64, index: u32) -> (u32, u32, u32, u64, u64) {
+    let digits = num.checked_ilog10().unwrap_or_default() + 1;
+    let upper_half_digits = index;
+    let lower_half_digits = digits - index;
     let upper_half = num.div(u64::pow(10, lower_half_digits));
     let lower_half = num.rem(u64::pow(10, lower_half_digits));
     (
@@ -88,14 +95,14 @@ impl InvalidIdIterator {
             lower_half_digits_min,
             upper_half_min,
             lower_half_min,
-        ) = split_in_half(min);
+        ) = split_at(min, get_half_point(min));
         let (
             digits_max,
             upper_half_digits_max,
             lower_half_digits_max,
             upper_half_max,
             lower_half_max,
-        ) = split_in_half(max);
+        ) = split_at(max, get_half_point(max));
         InvalidIdIterator {
             min: min,
             digits_min: digits_min,
