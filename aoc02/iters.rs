@@ -21,18 +21,21 @@ impl Iterator for RangesParser {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.input = self.input.trim().to_string();
-        match self.input.clone().split_once(',') {
-            Some((current_pair, rest)) => {
-                //println!("{},{}", current_pair, rest);
-                self.input = rest.to_string();
-                match current_pair.split_once('-') {
-                    Some((min_str, max_str)) => Some((
-                        min_str.parse::<u64>().unwrap_or_default(),
-                        max_str.parse::<u64>().unwrap_or_default(),
-                    )),
-                    None => None,
-                }
-            }
+        let clone = self.input.clone();
+        let (current_pair, rest) = {
+            let mut input_parts = clone.splitn(2, ",");
+            (
+                input_parts.next().unwrap(),
+                input_parts.next().unwrap_or_default(),
+            )
+        };
+        //println!("{},{}", current_pair, rest);
+        self.input = rest.to_string();
+        match current_pair.split_once('-') {
+            Some((min_str, max_str)) => Some((
+                min_str.parse::<u64>().unwrap_or_default(),
+                max_str.parse::<u64>().unwrap_or_default(),
+            )),
             None => None,
         }
     }
