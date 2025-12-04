@@ -49,7 +49,7 @@ fn get_half_point(num: u64) -> u32 {
     // let upper_half_min = (min - lower_half_min)/10^(lower_half_digits_min)
 
     let digits = num.checked_ilog10().unwrap_or_default() + 1;
-    let upper_half_digits = digits.div_ceil(2);
+    let upper_half_digits = digits.div(2);
 
     upper_half_digits
 }
@@ -128,8 +128,8 @@ impl Iterator for InvalidIdIterator {
     fn next(&mut self) -> Option<Self::Item> {
         let current_pattern = match self.last_pattern {
             0 => {
-                if self.digits_min.rem(2) == 1 {
-                    u64::pow(10, std::cmp::max(self.upper_half_digits_min - 1, 0))
+                if self.upper_half_digits_min * 2 < self.digits_min {
+                    u64::pow(10, std::cmp::max(self.upper_half_digits_min, 0)) // if we have 5(42) as min, start at the next new digit: 10(00)
                 } else if self.lower_half_min > self.upper_half_min {
                     self.upper_half_min + 1
                 } else {
