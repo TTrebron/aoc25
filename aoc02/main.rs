@@ -32,9 +32,10 @@ fn main() -> ExitCode {
     let mut solution: u64 = 0;
     for range in RangesParser::new(&input) {
         println!("{}-{}", range.0, range.1);
-        let invalid_id_iter = InvalidIdIterator::new(range.0, range.1);
+        let invalid_id_iter = InvalidIdIterator::new(range.0, range.1, None);
         println!("{:?}", invalid_id_iter);
         for invalid_id in invalid_id_iter {
+            //println!("{}", invalid_id);
             solution += invalid_id;
         }
     }
