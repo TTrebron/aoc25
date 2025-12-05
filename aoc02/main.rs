@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{env, fs, process::ExitCode};
 
 use iters::InvalidIdIterator;
@@ -29,18 +30,42 @@ fn main() -> ExitCode {
     }
 
     // parse ranges and iterate through all invalid ids
-    let mut solution: u64 = 0;
+    let mut solution_part_one: u64 = 0;
+    let mut solution_part_two: u64 = 0;
     for range in RangesParser::new(&input) {
         println!("{}-{}", range.0, range.1);
+
         let invalid_id_iter = InvalidIdIterator::new(range.0, range.1, None);
         println!("{:?}", invalid_id_iter);
         for invalid_id in invalid_id_iter {
-            //println!("{}", invalid_id);
-            solution += invalid_id;
+            println!("{}", invalid_id);
+            solution_part_one += invalid_id;
+        }
+
+        println!("=========================================");
+
+        let mut invalid_id_set = HashSet::new();
+        let min_digits: u32 = 0;
+        let max_digits: u32 = 9;
+        for prefix_digits_count in min_digits..=max_digits {
+            let invalid_id_iter =
+                InvalidIdIterator::new(range.0, range.1, Some(prefix_digits_count));
+            println!("{:?}", invalid_id_iter);
+            for invalid_id in invalid_id_iter {
+                println!("{}", invalid_id);
+                invalid_id_set.insert(invalid_id);
+            }
+        }
+        for invalid_id in &invalid_id_set {
+            solution_part_two += invalid_id;
         }
     }
 
-    println!("The sum of invalid IDs is: {}", solution);
+    println!("The sum of invalid IDs is: {}", solution_part_one);
+    println!(
+        "The sum of multi-pattern invalid IDs is: {}",
+        solution_part_two
+    );
 
     ExitCode::SUCCESS
 }
