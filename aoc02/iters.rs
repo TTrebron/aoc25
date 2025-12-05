@@ -41,7 +41,7 @@ impl Iterator for RangesParser {
     }
 }
 
-fn get_half_point(num: u64) -> u32 {
+pub fn get_half_point(num: u64) -> u32 {
     // let digits_min = min == 0 ? 1 : floor(log10(min)) + 1
     // let upper_half_digits_min = ceil(digits_min/2);
     // let lower_half_digits_min = digits_min - upper_half_digits_min;
@@ -54,10 +54,10 @@ fn get_half_point(num: u64) -> u32 {
     upper_half_digits
 }
 
-fn split_at(num: u64, index: u32) -> (u32, u32, u32, u64, u64) {
+pub fn split_at(num: u64, index: u32) -> (u32, u32, u32, u64, u64) {
     let digits = num.checked_ilog10().unwrap_or_default() + 1;
-    let upper_half_digits = index;
-    let lower_half_digits = digits - index;
+    let upper_half_digits = std::cmp::min(digits, index);
+    let lower_half_digits = digits - std::cmp::min(digits, index);
     let upper_half = num.div(u64::pow(10, lower_half_digits));
     let lower_half = num.rem(u64::pow(10, lower_half_digits));
     (
@@ -74,7 +74,7 @@ fn split_at_get_upper(num: u64, index: u32) -> u64 {
         return num;
     }
     let digits = num.checked_ilog10().unwrap_or_default() + 1;
-    let lower_half_digits = digits - index;
+    let lower_half_digits = digits - std::cmp::min(digits, index);
     let upper_half = num.div(u64::pow(10, lower_half_digits));
 
     upper_half
@@ -150,6 +150,7 @@ impl Iterator for InvalidIdIterator {
                     }
                 } else if split_at_get_upper(self.lower_half_min, self.prefix_digits_limit)
                     > self.upper_half_min
+                    || self.upper_half_min == 0
                 {
                     self.upper_half_min + 1
                 } else {
