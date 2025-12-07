@@ -101,6 +101,11 @@ pub struct InvalidIdIterator {
 
 impl InvalidIdIterator {
     pub fn new(min: u64, max: u64, prefix_digits_limit: Option<u32>) -> InvalidIdIterator {
+        // if prefix_digits_limit is None, we will split the numbers in half, and look only for double-pattern numbers in the range
+        // if it is Some(n), we will take the first n digits of the numbers, and try to generate number in the range where
+        // - the pattern length will always be the same as the limit
+        // - the pattern would be repeated as many times as necessary to generate a number within the range
+        // prefix_digits_limit does not work when digits(max) > digits(min)
         let (
             digits_min,
             upper_half_digits_min,
@@ -139,19 +144,27 @@ impl Iterator for InvalidIdIterator {
     type Item = u64;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let current_pattern = match self.last_pattern {
+        let mut current_pattern = match self.last_pattern {
             0 => {
-                if self.upper_half_digits_min * 2 < self.digits_min {
-                    // next generated number would be < min
+                // no last_pattern, determine start pattern (only works for prefix_digits_limit == 0 (automatic splitting))
+                if self.prefix_digits_limit > self.digits_min {
+                    // cannot split number
+                    return None;
+                } else if self.upper_half_digits_min * 2 < self.digits_min {
+                    // next generated number would have less digits than min
                     if self.prefix_digits_limit == 0 {
-                        u64::pow(10, std::cmp::max(self.upper_half_digits_min, 0)) // if we have 5(42) as min, start at the next new digit: 10(00)
+                        // if this is caused by automatic splitting, it means digits_min is odd
+                        // the first double number larger than min is 10^digits_min, so upper_half should be 10^upper_half_digits_min
+                        u64::pow(10, self.upper_half_digits_min) // if we have 5(42) as min, start at the next new digit: 10(00)
                     } else {
-                        return None; // fixed prefix, no number would be larger than min
+                        // we have manual splitting, so just set the default value and find a number below
+                        self.upper_half_min
                     }
                 } else if split_at_get_upper(self.lower_half_min, self.prefix_digits_limit)
                     > self.upper_half_min
                     || self.upper_half_min == 0
                 {
+                    // if lower half is larger than upper half, or upper half is somehow zero, start with the next pattern
                     self.upper_half_min + 1
                 } else {
                     self.upper_half_min
@@ -160,12 +173,33 @@ impl Iterator for InvalidIdIterator {
             val => val + 1,
         };
 
-        let digits_current_pattern = current_pattern.checked_ilog10().unwrap_or_default() + 1;
-        if self.prefix_digits_limit > 0 && digits_current_pattern > self.prefix_digits_limit {
-            return None;
-        }
+        // loop until we find a min number in range (necessary for second solution)
+        let mut digits_current_pattern;
+        let mut num;
+        loop {
+            digits_current_pattern = current_pattern.checked_ilog10().unwrap_or_default() + 1;
+            if self.prefix_digits_limit > 0 && digits_current_pattern > self.prefix_digits_limit {
+                return None;
+            }
 
-        let num = current_pattern + current_pattern * u64::pow(10, digits_current_pattern);
+            let pattern_repeat_count = if self.prefix_digits_limit > 0 {
+                std::cmp::max(2, self.digits_min.div_ceil(digits_current_pattern))
+            } else {
+                2
+            };
+            assert!(pattern_repeat_count > 0);
+
+            num = 0;
+            for i in 0..pattern_repeat_count {
+                num += current_pattern * u64::pow(10, digits_current_pattern * i);
+            }
+
+            // loop exit condition
+            if num >= self.min {
+                break;
+            }
+            current_pattern += 1;
+        }
 
         self.digits_last_pattern = digits_current_pattern;
         self.last_pattern = current_pattern;
