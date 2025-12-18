@@ -1,5 +1,5 @@
 use std::{
-    env, fs::File, io::{BufRead, BufReader}, ops::Add, process::ExitCode
+    convert::TryFrom, env, fs::File, io::{BufRead, BufReader}, ops::{Add, Sub}, process::ExitCode
 };
 
 fn get_largest_char_index<I: Iterator<Item = char>>(line: I, from: usize) -> Option<(usize, char)> {
@@ -33,7 +33,9 @@ fn get_largest_chars_in_order<const N: usize>(line: &String) -> Option<[char; N]
 
     let mut last_largest_char_index: Option<usize> = None;
     for i in 0..N {
-        let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_last_chars.add(i)), last_largest_char_index.map_or(0, |key| key + 1)) {
+        let sub_str = line.chars().take(count_minus_last_chars.add(i));
+        let from_index = last_largest_char_index.map_or(0, |key| key + 1);
+        let (largest_char_index, largest_char) = match get_largest_char_index(sub_str, from_index) {
             Some((key, val)) => (key, val),
             None => return None
         };
@@ -44,6 +46,30 @@ fn get_largest_chars_in_order<const N: usize>(line: &String) -> Option<[char; N]
     println!();
 
     Some(chars)
+}
+
+fn get_largest_possible_number<const N: usize>(line: &String) -> Option<u64> {
+    let safe_N: u32 = match u32::try_from(N) {
+        Err(_) => return None,
+        Ok(val) => val,
+    };
+
+    let largest_chars = match get_largest_chars_in_order::<N>(&line) {
+        Some(ch_arr) => ch_arr,
+        None => return None
+    };
+
+    let mut largest_combined: u64 = 0;
+    for i in 0..N {
+        largest_combined +=
+            u64::from(largest_chars[i]
+            .to_digit(10)
+            .expect("Every character must be a digit")
+            )
+            * u64::pow(10, safe_N.sub(u32::try_from(i + 1).unwrap_or_default()));
+    }
+
+    Some(largest_combined)
 }
 
 fn main() -> ExitCode {
@@ -73,23 +99,16 @@ fn main() -> ExitCode {
     }
 
     let mut first_part_solution = 0;
+    let mut second_part_solution = 0;
     for read_next_line in reader.lines() {
         match read_next_line {
             Ok(line) => {
-                let (largest_char, largest_char_after) = match get_largest_chars_in_order::<2>(&line) {
-                    Some(ch_arr) => (ch_arr[0], ch_arr[1]),
-                    None => continue
-                };
-
-                let largest_combined = largest_char
-                    .to_digit(10)
-                    .expect("Every character must be a digit")
-                    * 10
-                    + largest_char_after
-                        .to_digit(10)
-                        .expect("Every character must be a digit");
-                println!("{} largest: {}", line, largest_combined);
-                first_part_solution += largest_combined;
+                let largest_combined_2_digits = get_largest_possible_number::<2>(&line).unwrap_or_default();
+                let largest_combined_12_digits = get_largest_possible_number::<12>(&line).unwrap_or_default();
+                println!("{} largest 2: {}", line, largest_combined_2_digits);
+                println!("{} largest 12: {}", line, largest_combined_12_digits);
+                first_part_solution += largest_combined_2_digits;
+                second_part_solution += largest_combined_12_digits;
             }
             Err(err) => {
                 eprintln!("Error reading {}: {}", filename.as_str(), err);
@@ -101,6 +120,10 @@ fn main() -> ExitCode {
     println!(
         "Sum of largest two-digit numbers with consecutive digits: {}",
         first_part_solution
+    );
+    println!(
+        "Sum of largest twelve-digit numbers with consecutive digits: {}",
+        second_part_solution
     );
 
     return ExitCode::SUCCESS;
