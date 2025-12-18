@@ -5,7 +5,7 @@ use std::{
     process::ExitCode,
 };
 
-fn get_largest_digit_index<I: Iterator<Item = char>>(line: I, from: usize) -> Option<(usize, char)> {
+fn get_largest_char_index<I: Iterator<Item = char>>(line: I, from: usize) -> Option<(usize, char)> {
     let mut line_enum = line
         .enumerate() // [(0, &val), (1, &val), (2, &val), ...]
         .skip(from); // skip n elements
@@ -55,29 +55,28 @@ fn main() -> ExitCode {
     for read_next_line in reader.lines() {
         match read_next_line {
             Ok(line) => {
-                let (mut largest_digit_index, mut largest_digit) = match get_largest_digit_index(line.chars(), 0) {
-                    Some((key, val)) => (key, val),
-                    None => continue // line is empty
+                let count_minus_one = match line.chars().count().checked_sub(1) {
+                    None => continue, // line is empty
+                    Some(0) => continue, // line consists of one char
+                    Some(key) => key,
                 };
-                if largest_digit_index + 1 == line.len() {
-                    (largest_digit_index, largest_digit) = match get_largest_digit_index(line.chars().take(line.chars().count() - 1), 0) {
-                        Some((key, val)) => (key, val),
-                        None => continue // line contains only one digit
-                    };
-                }
-                let (largest_digit_after_index, largest_digit_after) =
-                    match get_largest_digit_index(line.chars(), largest_digit_index + 1) {
-                        Some((key, val)) => (key, val),
-                        None => continue // line is still empty
-                    };
 
-                println!("{}, {}", largest_digit_index, largest_digit_after_index);
+                let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_one), 0) {
+                    Some((key, val)) => (key, val),
+                    None => continue
+                };
+                let (largest_char_after_index, largest_char_after) = match get_largest_char_index(line.chars(), largest_char_index + 1) {
+                    Some((key, val)) => (key, val),
+                    None => continue
+                };
 
-                let largest_combined = largest_digit
+                println!("{}, {}", largest_char_index, largest_char_after_index);
+
+                let largest_combined = largest_char
                     .to_digit(10)
                     .expect("Every character must be a digit")
                     * 10
-                    + largest_digit_after
+                    + largest_char_after
                         .to_digit(10)
                         .expect("Every character must be a digit");
                 println!("{} largest: {}", line, largest_combined);
