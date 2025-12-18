@@ -25,6 +25,26 @@ fn get_largest_char_index<I: Iterator<Item = char>>(line: I, from: usize) -> Opt
     //.max_by_key(|&(_, v)| v) // computes max value, returns (index, &val), but always returns the last occurrence of the max value
 }
 
+fn get_largest_chars_in_order(line: &String) -> Option<(char, char)> {
+    let count_minus_one = match line.chars().count().checked_sub(1) {
+        None => return None, // line is empty
+        Some(0) => return None, // line consists of one char
+        Some(key) => key,
+    };
+
+    let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_one), 0) {
+        Some((key, val)) => (key, val),
+        None => return None
+    };
+    let (largest_char_after_index, largest_char_after) = match get_largest_char_index(line.chars(), largest_char_index + 1) {
+        Some((key, val)) => (key, val),
+        None => return None
+    };
+
+    println!("{}, {}", largest_char_index, largest_char_after_index);
+    Some((largest_char, largest_char_after))
+}
+
 fn main() -> ExitCode {
     let filename;
     match env::args().nth(1) {
@@ -55,22 +75,10 @@ fn main() -> ExitCode {
     for read_next_line in reader.lines() {
         match read_next_line {
             Ok(line) => {
-                let count_minus_one = match line.chars().count().checked_sub(1) {
-                    None => continue, // line is empty
-                    Some(0) => continue, // line consists of one char
-                    Some(key) => key,
-                };
-
-                let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_one), 0) {
-                    Some((key, val)) => (key, val),
+                let (largest_char, largest_char_after) = match get_largest_chars_in_order(&line) {
+                    Some((ch1, ch2)) => (ch1, ch2),
                     None => continue
                 };
-                let (largest_char_after_index, largest_char_after) = match get_largest_char_index(line.chars(), largest_char_index + 1) {
-                    Some((key, val)) => (key, val),
-                    None => continue
-                };
-
-                println!("{}, {}", largest_char_index, largest_char_after_index);
 
                 let largest_combined = largest_char
                     .to_digit(10)
