@@ -1,8 +1,5 @@
 use std::{
-    env,
-    fs::File,
-    io::{BufRead, BufReader},
-    process::ExitCode,
+    env, fs::File, io::{BufRead, BufReader}, ops::Add, process::ExitCode
 };
 
 fn get_largest_char_index<I: Iterator<Item = char>>(line: I, from: usize) -> Option<(usize, char)> {
@@ -25,24 +22,28 @@ fn get_largest_char_index<I: Iterator<Item = char>>(line: I, from: usize) -> Opt
     //.max_by_key(|&(_, v)| v) // computes max value, returns (index, &val), but always returns the last occurrence of the max value
 }
 
-fn get_largest_chars_in_order(line: &String) -> Option<(char, char)> {
-    let count_minus_one = match line.chars().count().checked_sub(1) {
+fn get_largest_chars_in_order<const N: usize>(line: &String) -> Option<[char; N]> {
+    let count_minus_last_chars = match line.chars().count().checked_sub(N - 1) {
         None => return None, // line is empty
-        Some(0) => return None, // line consists of one char
+        Some(0) => return None, // line consists of <N chars
         Some(key) => key,
     };
 
-    let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_one), 0) {
-        Some((key, val)) => (key, val),
-        None => return None
-    };
-    let (largest_char_after_index, largest_char_after) = match get_largest_char_index(line.chars(), largest_char_index + 1) {
-        Some((key, val)) => (key, val),
-        None => return None
-    };
+    let mut chars = [0 as char; N];
 
-    println!("{}, {}", largest_char_index, largest_char_after_index);
-    Some((largest_char, largest_char_after))
+    let mut last_largest_char_index: Option<usize> = None;
+    for i in 0..N {
+        let (largest_char_index, largest_char) = match get_largest_char_index(line.chars().take(count_minus_last_chars.add(i)), last_largest_char_index.map_or(0, |key| key + 1)) {
+            Some((key, val)) => (key, val),
+            None => return None
+        };
+        chars[i] = largest_char;
+        last_largest_char_index = Some(largest_char_index);
+        print!("{} ", largest_char_index);
+    }
+    println!();
+
+    Some(chars)
 }
 
 fn main() -> ExitCode {
@@ -75,8 +76,8 @@ fn main() -> ExitCode {
     for read_next_line in reader.lines() {
         match read_next_line {
             Ok(line) => {
-                let (largest_char, largest_char_after) = match get_largest_chars_in_order(&line) {
-                    Some((ch1, ch2)) => (ch1, ch2),
+                let (largest_char, largest_char_after) = match get_largest_chars_in_order::<2>(&line) {
+                    Some(ch_arr) => (ch_arr[0], ch_arr[1]),
                     None => continue
                 };
 
