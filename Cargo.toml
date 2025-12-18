@@ -8,3 +8,23 @@ edition = "2024"
 [[bin]]
 name = "aoc01"
 path = "aoc01/main.rs"
+
+[[bin]]
+name = "aoc02"
+path = "aoc02/main.rs"
+
+[[test]]
+name = "aoc02test"
+path = "aoc02/test.rs"
+
+[[bin]]
+name = "aoc03"
+path = "aoc03/main.rs"
+
+[[bin]]
+name = "aoc04"
+path = "aoc04/main.rs"
+
+[[test]]
+name = "aoc04test"
+path = "aoc04/test.rs"
