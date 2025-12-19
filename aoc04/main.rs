@@ -56,5 +56,17 @@ fn main() -> ExitCode {
         }
     }
 
+    // count rolls of paper in the 8 adjacent cells for each roll
+    let mut first_part_solution = 0;
+    for row in 0..grid.height() {
+        for col in 0..grid.width() {
+            if grid.get((row, col)) && grid.get_rolls_nearby((row as i64, col as i64)) < 4 {
+                first_part_solution += 1;
+            }
+        }
+    }
+
+    println!("Rolls accessible by forklifts: {}", first_part_solution);
+
     ExitCode::SUCCESS
 }

@@ -112,6 +112,23 @@ impl Matrix {
 
         return self.get((safe_row, safe_col));
     }
+
+    pub fn get_rolls_nearby(&self, (row, col): (i64, i64)) -> usize {
+        let mut count = 0;
+
+        for y in -1..=1 {
+            for x in -1..=1 {
+                if self.get_coords((row + y, col + x)) {
+                    count += 1;
+                }
+            }
+        }
+        if self.get_coords((row, col)) {
+            count -= 1;
+        }
+
+        count
+    }
 }
 
 impl Index<(usize, usize)> for Matrix {
