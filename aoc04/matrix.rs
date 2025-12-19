@@ -1,8 +1,9 @@
 use std::convert::TryFrom;
-use std::ops::Index;
+use std::ops::{Index, IndexMut};
 
 type T = bool;
 
+#[derive(Clone)]
 pub struct Matrix {
     vec: Vec<T>,
     _w: usize,
@@ -53,6 +54,11 @@ impl Matrix {
         self.vec.resize(self._w * self._h, false); // ensure correct size, fill empty spaces
 
         true
+    }
+
+    pub fn set_height(&mut self, new_height: usize) {
+        self._h = new_height;
+        self.vec.resize(self._w * self._h, false);
     }
 
     pub fn push_line(&mut self, line: &str) -> bool {
@@ -129,6 +135,36 @@ impl Matrix {
 
         count
     }
+
+    pub fn set(&mut self, (row, col): (usize, usize), new_val: T) {
+        // set copy of element at (row, col), or false if out of bounds
+        if col >= self._w {
+            return;
+        }
+        if row >= self._h {
+            return;
+        }
+
+        self[(row, col)] = new_val;
+    }
+
+    pub fn copy_remove_all_accessible(&mut self, mtx_out: &mut Matrix) -> usize {
+        // finds all accessible rolls of paper (true values with at most 4 true neighbors) and removes them from mtx_out
+        // returns the number of rolls removed
+        assert_eq!(mtx_out.width(), self.width());
+        assert_eq!(mtx_out.height(), self.height());
+
+        let mut total = 0;
+        for row in 0..self.height() {
+            for col in 0..self.width() {
+                if self.get((row, col)) && self.get_rolls_nearby((row as i64, col as i64)) < 4 {
+                    mtx_out.set((row, col), false);
+                    total += 1;
+                }
+            }
+        }
+        total
+    }
 }
 
 impl Index<(usize, usize)> for Matrix {
@@ -136,5 +172,11 @@ impl Index<(usize, usize)> for Matrix {
 
     fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
         &self.vec[row * self._w + col]
+    }
+}
+
+impl IndexMut<(usize, usize)> for Matrix {
+    fn index_mut(&mut self, (row, col): (usize, usize)) -> &mut Self::Output {
+        &mut self.vec[row * self._w + col]
     }
 }
