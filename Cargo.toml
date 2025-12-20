@@ -28,3 +28,7 @@ path = "aoc04/main.rs"
 [[test]]
 name = "aoc04test"
 path = "aoc04/test.rs"
+
+[[bin]]
+name = "aoc05"
+path = "aoc05/main.rs"
