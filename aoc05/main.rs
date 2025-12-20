@@ -28,6 +28,7 @@ fn main() -> ExitCode {
         }
     }
 
+    // read and parse ranges
     let mut ranges: BTreeMap<usize, usize> = BTreeMap::new();
 
     let mut lines_iter = reader.lines();
@@ -100,7 +101,44 @@ fn main() -> ExitCode {
         }
     }
 
+    // iterate over ranges, keep previous. is previous range_end >= current range_start -> previous range_end = current range_start - 1
+    let mut prev_range: Option<(usize, usize)> = None;
+    for (range_start, range_end) in ranges.clone() {
+        let Some((prev_range_start, prev_range_end)) = prev_range else {
+            prev_range = Some((range_start, range_end));
+            continue;
+        };
+
+        // if current range starts in previous range:
+        let mut prev_set = true;
+        if prev_range_end >= range_start {
+            if range_end <= prev_range_end {
+                // the range is fully included in the previous range - remove and don't update previous range
+                println!(
+                    "range {}-{} removed because its in range {}-{}",
+                    range_start, range_end, prev_range_start, prev_range_end
+                );
+                ranges.remove(&range_start);
+                prev_set = false;
+            } else {
+                // simply shrink the previous range
+                ranges.insert(prev_range_start, range_start - 1);
+            }
+        }
+
+        if prev_set {
+            prev_range = Some((range_start, range_end));
+        }
+    }
+
+    // calculate number of all IDs
+    let mut second_part_solution = 0;
+    for (range_start, range_end) in ranges.clone() {
+        second_part_solution += range_end - range_start + 1;
+    }
+
     println!("Number of fresh ingredients: {}", first_part_solution);
+    println!("Number of all fresh ingredients: {}", second_part_solution);
 
     ExitCode::SUCCESS
 }
