@@ -1,6 +1,6 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Expression {
-    pub nums: Vec<i64>,
+    pub nums: Vec<u64>,
     pub operation: Option<char>,
 }
 
@@ -9,6 +9,14 @@ impl Expression {
         Expression {
             nums: vec![],
             operation: None,
+        }
+    }
+
+    pub fn calculate(&self) -> u64 {
+        match self.operation {
+            Some('+') => self.nums.iter().sum::<u64>(),
+            Some('*') => self.nums.iter().product::<u64>(),
+            Some(_) | None => 0,
         }
     }
 }
