@@ -36,3 +36,7 @@ path = "aoc05/main.rs"
 [[bin]]
 name = "aoc06"
 path = "aoc06/main.rs"
+
+[[bin]]
+name = "aoc07"
+path = "aoc07/main.rs"
