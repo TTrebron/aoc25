@@ -39,21 +39,21 @@ where
     }
 }
 
-fn init_state(state: &mut Vec<bool>, line_len: usize) {
-    state.resize(line_len, false);
+fn init_state(state: &mut Vec<u64>, line_len: usize) {
+    state.resize(line_len, 0);
 }
 
-fn update_state(state: &mut Vec<bool>, line: &str) -> u32 {
+fn update_state(state: &mut Vec<u64>, line: &str) -> u32 {
     let mut splits = 0;
     for i in 1..state.len().checked_sub(1).unwrap_or(0) {
         match line.chars().nth(i) {
-            Some('S') => state[i] = true,
+            Some('S') => state[i] = 1,
             Some('^') => {
-                if state[i] {
+                if state[i] > 0 {
                     splits += 1;
-                    state[i - 1] = true;
-                    state[i] = false;
-                    state[i + 1] = true;
+                    state[i - 1] += state[i];
+                    state[i + 1] += state[i];
+                    state[i] = 0;
                 }
             }
             _ => (),
@@ -91,11 +91,20 @@ fn main() -> ExitCode {
         first_part_solution += update_state(&mut state, line);
     });
 
+    let mut second_part_solution = 0;
+    for timeline_count in state {
+        second_part_solution += timeline_count;
+    }
+
     println!(
         "The number of beam splits in the diagram: {}",
         first_part_solution
     );
 
+    println!(
+        "The number of timelines in the diagram: {}",
+        second_part_solution
+    );
+
     ExitCode::SUCCESS
 }
-
