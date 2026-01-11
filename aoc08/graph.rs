@@ -1,5 +1,11 @@
-use std::{fmt::Debug, rc::Rc};
+use std::{
+    fmt::Debug,
+    rc::Rc,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
+// VERTEX
+// Simple 3D coordinate struct
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Vertex {
     pub x: u32,
@@ -19,6 +25,8 @@ impl Vertex {
     }
 }
 
+// EDGE
+// Contains vertex references
 #[derive(Clone)]
 pub struct Edge {
     pub v1: Rc<Vertex>,
@@ -34,7 +42,8 @@ impl<'a> Debug for Edge {
 impl<'a> Eq for Edge {}
 impl<'a> PartialEq for Edge {
     fn eq(&self, other: &Self) -> bool {
-        (self.v1 == other.v1 && self.v2 == other.v2) || (self.v1 == other.v2 && self.v2 == other.v1)
+        (Rc::ptr_eq(&self.v1, &other.v1) && Rc::ptr_eq(&self.v2, &other.v2))
+            || (Rc::ptr_eq(&self.v1, &other.v2) && Rc::ptr_eq(&self.v2, &other.v1))
     }
 }
 
@@ -44,15 +53,21 @@ impl<'a> Edge {
     }
 }
 
+// GRAPH
+static GRAPH_ID_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
 #[derive(Debug)]
 pub struct Graph {
+    id: usize,
     vertices: Vec<Rc<Vertex>>,
     edges: Vec<Edge>,
 }
 
 impl Graph {
     pub fn new() -> Graph {
+        let new_id = GRAPH_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
         Graph {
+            id: new_id,
             vertices: vec![],
             edges: vec![],
         }
@@ -68,7 +83,7 @@ impl Graph {
 
     // push already allocated vertex
     pub fn push_vertex_ref(&mut self, vertex: Rc<Vertex>) {
-        if !self.vertices.contains(&vertex) {
+        if !self.vertices.iter().any(|v| Rc::ptr_eq(v, &vertex)) {
             self.vertices.push(vertex);
         }
     }
@@ -81,6 +96,10 @@ impl Graph {
     // get a new reference to a vertex
     pub fn get_vertex(&self, i: usize) -> Rc<Vertex> {
         self.vertices[i].clone()
+    }
+
+    pub fn has_vertex(&self, vertex: &Rc<Vertex>) -> bool {
+        self.vertices.contains(vertex)
     }
 
     // add edge
@@ -101,6 +120,17 @@ impl Graph {
     }
     pub fn remove_edge(&mut self, i: usize) -> Edge {
         self.edges.remove(i)
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
+    pub fn print_stats(&self) -> String {
+        format!(
+            "{} edges, {} vertices",
+            self.edges_len(),
+            self.vertices_len()
+        )
     }
 
     // recursively move all edges connected to common_vertex to other_graph
@@ -142,6 +172,26 @@ impl Graph {
         // add all removed edges to other_graph
         while neighbors.len() > 0 {
             other_graph.add_edge(neighbors.pop().unwrap());
+        }
+    }
+
+    // absorbs all edges and vertices from other graph
+    // does not check for duplicates
+    pub fn absorb(&mut self, other_graph: &mut Graph) {
+        while other_graph.edges_len() > 0 {
+            self.edges.append(
+                &mut other_graph
+                    .edges
+                    .drain(0..other_graph.edges_len())
+                    .collect(),
+            );
+
+            self.vertices.append(
+                &mut other_graph
+                    .vertices
+                    .drain(0..other_graph.vertices_len())
+                    .collect(),
+            );
         }
     }
 }
